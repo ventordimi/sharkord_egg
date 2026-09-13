@@ -1,0 +1,71 @@
+{
+    "meta": {
+        "version": "PTDL_v2",
+        "update_url": null
+    },
+    "exported_at": "2026-09-13T00:00:00+00:00",
+    "name": "Sharkord",
+    "author": "ventordev@gmail.com",
+    "description": "Self-hosted voice, video, and text chat server. Includes Caddy with Cloudflare DNS-01 SSL support.",
+    "features": null,
+    "docker_images": {
+        "ghcr.io/parkervcp/yolks:debian": "ghcr.io/parkervcp/yolks:debian"
+    },
+    "file_denylist": [],
+    "startup": "if [ ! -f ./sharkord ] || [ \"{{AUTO_UPDATE}}\" = \"1\" ]; then curl -L https://github.com/Sharkord/sharkord/releases/latest/download/sharkord-linux-x64 -o sharkord && chmod +x sharkord; fi; if [ ! -f ./caddy ]; then curl -L \"https://caddyserver.com/api/download?os=linux&arch=amd64&p=github.com/caddy-dns/cloudflare\" -o caddy && chmod +x caddy; fi; mkdir -p .config/sharkord; if [ ! -f .config/sharkord/config.ini ]; then echo \"[server]\" > .config/sharkord/config.ini; echo \"port = 4991\" >> .config/sharkord/config.ini; echo \"\" >> .config/sharkord/config.ini; echo \"[webRtc]\" >> .config/sharkord/config.ini; echo \"port = {{RTC_PORT}}\" >> .config/sharkord/config.ini; else sed -i \"/^\\[webRtc\\]/,/^\\[/ s/^[[:space:]]*port[[:space:]]*=.*/port = {{RTC_PORT}}/\" .config/sharkord/config.ini; fi; if [ ! -f ./Caddyfile ]; then echo \"demo.sharkord.com:{{SERVER_PORT}} {\" > ./Caddyfile; echo \"  tls {\" >> ./Caddyfile; echo \"    dns cloudflare YOUR_CLOUDFLARE_API_TOKEN_HERE\" >> ./Caddyfile; echo \"  }\" >> ./Caddyfile; echo \"  reverse_proxy 127.0.0.1:4991 {\" >> ./Caddyfile; echo \"    header_up X-Real-IP {remote_host}\" >> ./Caddyfile; echo \"  }\" >> ./Caddyfile; echo \"  header -X-Frame-Options\" >> ./Caddyfile; echo \"  header -Content-Security-Policy\" >> ./Caddyfile; echo \"  header Access-Control-Allow-Origin *\" >> ./Caddyfile; echo \"}\" >> ./Caddyfile; ./caddy fmt --overwrite ./Caddyfile; else sed -i -E \"s/demo\\.sharkord\\.com:[0-9]+/demo.sharkord.com:{{SERVER_PORT}}/\" ./Caddyfile; ./caddy fmt --overwrite ./Caddyfile; fi; if [ \"{{START_CADDY}}\" = \"1\" ]; then if [ \"{{DISABLE_CADDY_LOGS}}\" = \"1\" ]; then ./caddy run --config ./Caddyfile > /dev/null 2>&1 & else ./caddy run --config ./Caddyfile & fi; fi; ./sharkord",
+    "config": {
+        "files": "{}",
+        "startup": "{\r\n    \"done\": \"Listening on\"\r\n}",
+        "logs": "{}",
+        "stop": "^C"
+    },
+    "scripts": {
+        "installation": {
+            "script": "#!/bin/bash\ncd /mnt/server\ncurl -L https://github.com/Sharkord/sharkord/releases/latest/download/sharkord-linux-x64 -o sharkord\nchmod +x sharkord\n\ncurl -L \"https://caddyserver.com/api/download?os=linux&arch=amd64&p=github.com/caddy-dns/cloudflare\" -o caddy\nchmod +x caddy\n\nmkdir -p .config/sharkord\nif [ ! -f .config/sharkord/config.ini ]; then\ncat <<EOF > .config/sharkord/config.ini\n[server]\nport = 4991\n\n[webRtc]\nport = 40000\nEOF\nfi",
+            "container": "ghcr.io/parkervcp/yolks:debian",
+            "entrypoint": "bash"
+        }
+    },
+    "variables": [
+        {
+            "name": "WebRTC Port",
+            "description": "The additional port allocated to the server for WebRTC voice and video media streams.",
+            "env_variable": "RTC_PORT",
+            "default_value": "40000",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|numeric",
+            "field_type": "text"
+        },
+        {
+            "name": "Auto Update",
+            "description": "Automatically check and update the Sharkord binary on server startup.",
+            "env_variable": "AUTO_UPDATE",
+            "default_value": "1",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|boolean",
+            "field_type": "text"
+        },
+        {
+            "name": "Start Caddy Server",
+            "description": "Start the built-in Caddy reverse proxy server using Caddyfile. Turned off by default (0).",
+            "env_variable": "START_CADDY",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|boolean",
+            "field_type": "text"
+        },
+        {
+            "name": "Disable Caddy Logs",
+            "description": "Silence all Caddy console log outputs in the server console (1 = quiet, 0 = verbose).",
+            "env_variable": "DISABLE_CADDY_LOGS",
+            "default_value": "0",
+            "user_viewable": true,
+            "user_editable": true,
+            "rules": "required|boolean",
+            "field_type": "text"
+        }
+    ]
+}

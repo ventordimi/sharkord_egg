@@ -140,7 +140,7 @@ yourdomain.com:25565 {
 
 Пример правильно заполненного файла `Caddyfile`:
 ```caddy
-e.yourdomain.com:25565 {
+yourdomain.com:25565 {
     tls {
         dns cloudflare ваш_настоящий_токен_cloudflare_сюда
     }
